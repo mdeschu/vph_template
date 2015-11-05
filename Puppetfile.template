@@ -1,0 +1,6 @@
+forge "https://forge.puppetlabs.com"
+
+mod 'pdxcat/singleton'
+mod 'puppetlabs/firewall'
+mod 'stahnma/epel'
+mod 'puppetlabs/postgresql'

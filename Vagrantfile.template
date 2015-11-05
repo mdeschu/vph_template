@@ -1,0 +1,80 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+#
+# Vagrantfile template for configuration of single or multi machine cluster running
+# CentOS 6.x. PuppetLabs box name is CentOS 6.6 but it will always be the latest 6.x
+# as stated by PuppetLabs
+
+# vi: set ft=ruby :
+#
+# Define any machine you wish to be provisioned here
+nodes = [
+    {
+        :name => "generic-machine1",
+        # This box can either be one from hashicorp or 
+        # a custom box
+        :box => "puppetlabs/centos-6.6-64-puppet",
+        :eth1 => "10.0.0.2",
+        :mem => "2048",
+        :cpu => "1",
+        :puppet => "generic-machine1.pp",
+        :showgui => false,
+        # Ports to forward outside the cluster
+        :ports => [
+            {
+                :host => "8081",
+                :guest => "8083"
+            },
+            {
+                :host => "8082",
+                :guest => "8084"
+            }
+        ]
+    }
+]
+
+# Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
+VAGRANTFILE_API_VERSION = "2"
+
+
+# The definitions above of the machines are what you should be modifying for each project
+# The code below should not generally be touched
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+
+  nodes.each do |opts|
+
+      config.vm.define opts[:name] do |config|
+
+          config.vm.box = opts[:box]
+          config.vm.hostname = opts[:name]
+
+          opts[:ports].each do |port|
+               # Network Port Configuration
+               config.vm.network "forwarded_port", guest: port[:guest], host: port[:host]
+          end
+
+          # VMWare Fusion Provisioner
+#          config.vm.provider "vmware_fusion" do |v|
+#              v.vmx["memsize"] = opts[:mem]
+#              v.vmx["numvcpus"] = opts[:cpu]
+#          end
+          
+          # VirtualBox Provisioner
+          config.vm.provider "virtualbox" do |v| 
+              v.gui = opts[:showgui]
+              v.customize ["modifyvm", :id, "--memory", opts[:mem]]
+              v.customize ["modifyvm", :id, "--cpus", opts[:cpu]]
+              v.customize ["modifyvm", :id, "--ioapic", "on"  ]
+          end
+
+          config.vm.network :private_network, ip: opts[:eth1]
+
+          config.vm.provision :puppet do |puppet|
+              puppet.options = " --verbose --debug --hiera_config /vagrant/puppet/hiera.yaml"
+              puppet.module_path='puppet/modules'
+              puppet.manifests_path='puppet/manifests'
+              puppet.manifest_file=opts[:puppet]
+          end
+      end
+  end
+end

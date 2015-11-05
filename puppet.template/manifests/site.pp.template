@@ -1,0 +1,77 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# This is the main configuration file for a running on a VM via Vagrant
+# Currently this is only setup for a standalone configuration but could be modified to be used on a puppet master
+stage { 'pre-main':
+  before => Stage['main'],
+}
+stage { 'last': }
+Stage['main'] -> Stage['last']
+
+# Global package config
+Package { ensure => "installed" }
+
+# Common utility and build packages
+singleton_packages ("gcc", "gcc-c++", "autoconf", "make", "automake", "binutils", "libtool", "screen", "vim", "telnet", "nc")
+
+
+user { 'mdeschu':
+    name => 'mdeschu',
+    ensure    => 'present', # The user's  id
+    #uid       => '1001',   # The user's primary group id
+    #gid       => '1001',   # Eventual user's secondary groups (use array for many)
+    groups    => [ 'wheel' ], # The user's password. As it appears in /etc/shadow
+    # Use single quotes to avoid unanted evaluation of $* as variables
+    #password  => '$6$ZFS5JFFRZc$FFDSvPZSSFGVdXDlHe�',
+    # Typical users' attributes
+    shell     => '/bin/bash',
+    home      => '/home/mdeschu',
+    managehome => true,
+}
+
+class thc::yum {
+    file {
+        '/etc/yum.conf':
+        ensure => present,
+        owner => 'root',
+        group => 'root',
+        mode => '0644',
+        source => 'puppet:///modules/yum/yum.conf';
+    }
+    file { [ "/vagrant", "/vagrant/cache", "/vagrant/cache/yum" ]:
+        ensure => directory,
+    }
+}
+
+class { 'thc::yum':
+    stage => 'pre-main'
+}
+
+# -------------------------------
+## Epel and java installation
+# -------------------------------
+include epel
+#include java
+
+Package {
+    provider => $operatingsystem ? {
+        debian => aptitude,
+        redhat => yum,
+        CentOS => yum,
+        windows => msi,
+    },
+
+    allow_virtual => true,
+}
+
+class open_ports {
+    firewall { "001 Permit Port":
+      port     => 1235,
+      proto    => udp,
+      action   => accept,
+    }
+}
+
+include open_ports
+
