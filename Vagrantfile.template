@@ -136,31 +136,85 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
           #
           # config.vm.synced_folder "~/Documents", "/vagrant_data"
 
+          #
+          #
           # Provisioners
           # 
-          # Puppet 
+          # https://www.vagrantup.com/docs/provisioning/
+          # 
+          #
+          #
+          
+          # File Provisioning
+          #
+          #
+          #config.vm.provision "file", source: "~/.gitconfig", destination: ".gitconfig"
+          
+          # Puppet (Apply), no master (server) required
+          #
           #config.vm.provision :puppet do |puppet|
           #    puppet.options = " --verbose --debug --hiera_config /vagrant/puppet/hiera.yaml"
           #    puppet.module_path='puppet/modules'
           #    puppet.manifests_path='puppet/manifests'
           #    puppet.manifest_file=opts[:puppet]
           #end
+          #
+          # Puppet Agent (Requires a Master)
+          #
           
           # Ansible
           #
-
-
-          # Salt
+          # Requires Ansible to installed on host or provision "ansible_local"
+          #config.vm.provision "ansible" do |ansible|
+          #  ansible.playbook = "playbook.yml"
+          #end
           #
+          # Ansible Local
+          #config.vm.provision "ansible_local" do |ansible|
+          #    ansible.verbose        = true
+          #    ansible.install        = true
+          #    ansible.limit          = "all" # or only "nodes" group, etc.
+          #    ansible.inventory_path = "inventory"
+          #end
+
+          # CFEngine
+          #
+          #
+          #config.vm.provision "cfengine" do |cf|
+          #  cf.am_policy_hub = true
+          #  cf.files_path = "cfengine_files"
+          #end
+
+          # Salt (Masterless)
+          #
+          # # Use all the defaults:
+          #config.vm.provision :salt do |salt|
+          #  salt.masterless = true
+          #  salt.minion_config = "salt/minion"
+          #  salt.run_highstate = true
+          #end
 
 
           # Chef
+          # ------
+          # Chef Solo (No server required, use Zero instead?)
+          #
+          # Chef Client (Uses the server)
+          #
+          # Chef Zero (Like Solo but runs light weight server on client)
+          #
+          # Chef Apply
+          #   Doesn't support roles or Data Bags
           #
 
+          # Docker
+          #
 
-          # Shell Provisioning
+          # Shell 
+          #
           # Every VM must have a bootstrap shell provisioner even if empty
           #config.vm.provision "shell", path: opts[:bootstrap]
+          #
       end
   end
 end
