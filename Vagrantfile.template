@@ -5,31 +5,40 @@
 # CentOS 6.x. PuppetLabs box name is CentOS 6.6 but it will always be the latest 6.x
 # as stated by PuppetLabs
 
+# # Visit for additional configuration
+# https://www.vagrantup.com/docs/virtualbox/configuration.html
+# # Self hosted Boxes
+# https://github.com/hollodotme/Helpers/blob/master/Tutorials/vagrant/self-hosted-vagrant-boxes-with-versioning.md
+# # Box Metadata Format
+# https://www.vagrantup.com/docs/boxes/format.html
 # vi: set ft=ruby :
 #
+#
 # Define any machine you wish to be provisioned here
+#
 nodes = [
     {
         :name => "generic-machine1",
         # This box can either be one from hashicorp or 
         # a custom box
-        :box => "puppetlabs/centos-6.6-64-puppet",
-        :eth1 => "10.0.0.2",
-        :mem => "2048",
+        :box => "centos-6.8-x64-gnome-puppet",
+        :eth1 => "10.0.0.255",
+        :mem => "1024",
         :cpu => "1",
+        :linked_clone => "true",
         :puppet => "generic-machine1.pp",
-        :showgui => false,
-        # Ports to forward outside the cluster
+        :showgui => true,
+        # Ports to forward outside 
         :ports => [
             {
-                :host => "8081",
-                :guest => "8083"
-            },
-            {
-                :host => "8082",
-                :guest => "8084"
+                :host => "65000",
+                :guest => "65001"
             }
-        ]
+        ],
+        #:bootstrap => "bootstrap.sh",
+        #:puppet => "manifest.pp",
+        :ssh =>"9999",
+        :groups => "/vagrant/nested_group,/group2",
     }
 ]
 
@@ -45,11 +54,21 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
       config.vm.define opts[:name] do |config|
 
+          # Default to not check for updates. We don't have a personal server
+          config.vm.box_check_update = false
+
+          # Use this to override using Vagrants Cloud
+          config.vm.box_url = "file://~/Documents/tHC/vagrant/devops.json"
+          
+          # Vagrant box to use
           config.vm.box = opts[:box]
+          # Hostname
           config.vm.hostname = opts[:name]
 
+          # SSH Configuration
+          config.vm.network :forwarded_port, guest: 22, host: opts[:ssh], id: "ssh"
+          # Network Port Configuration
           opts[:ports].each do |port|
-               # Network Port Configuration
                config.vm.network "forwarded_port", guest: port[:guest], host: port[:host]
           end
 
@@ -59,22 +78,89 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 #              v.vmx["numvcpus"] = opts[:cpu]
 #          end
           
-          # VirtualBox Provisioner
-          config.vm.provider "virtualbox" do |v| 
-              v.gui = opts[:showgui]
-              v.customize ["modifyvm", :id, "--memory", opts[:mem]]
-              v.customize ["modifyvm", :id, "--cpus", opts[:cpu]]
-              v.customize ["modifyvm", :id, "--ioapic", "on"  ]
+          # VirtualBox Provider, Configure CPU, Mem, IO
+          config.vm.provider "virtualbox" do |vb| 
+
+
+              # # Saves space if bringing up multiple instances based off the same 'base' box
+              vb.linked_clone = opts[:linked_clone]
+              
+              # # The text that will appear as the name in VirtualBox
+              vb.name = opts[:name]
+
+              # # Should the UI for the VM be shown
+              vb.gui = opts[:showgui]
+
+              # # Shortcut to configure cpu and memory
+              vb.cpus = opts[:cpu]
+              vb.memory = opts[:mem]
+
+              ## Old way to configure CPUs and Memory
+              #vb.customize ["modifyvm", :id, "--cpus", opts[:cpu]]
+              #vb.customize ["modifyvm", :id, "--memory", opts[:mem]]
+
+              # # Overview https://www.virtualbox.org/manual/ch08.html#idm3526
+              # # https://www.virtualbox.org/manual/ch08.html#vboxmanage-modifyvm
+              # # This helps with...something, maybe performance?
+              vb.customize ["modifyvm", :id, "--ioapic", "on"  ]
+
+              # # Groups?
+              # https://blogs.oracle.com/fatbloke/entry/creating_and_using_vm_groups
+              vb.customize ["modifyvm", :id, "--groups", opts[:groups]]
+
+              # # Enable Clipboard
+              # [--clipboard disabled|hosttoguest|guesttohost|bidirectional]
+              vb.customize ["modifyvm", :id, "--clipboard", "bidirectional"]
+
+              # # Enable Clipboard
+              # [--draganddrop disabled|hosttoguest]
+              #vb.customize ["modifyvm", :id, "--draganddrop", "bidirectional"]
+
+              # # If on windows can use page fusion
+              #vb.customize ["modifyvm", :id, "--pagefusion", "on"]
+
+
+              # # HPET 
+              # https://en.wikipedia.org/wiki/High_Precision_Event_Timer
+              #vb.customize ["modifyvm", :id, "--hpet", "on"]
+              #
+              # # Useful if you don't want your host machine to come to a crawl
+              # # when your guest is trying to hog the CPU
+              #v.customize ["modifyvm", :id, "--cpuexecutioncap", "80"]
           end
 
+          # Add additional network card for internal network communication
           config.vm.network :private_network, ip: opts[:eth1]
 
-          config.vm.provision :puppet do |puppet|
-              puppet.options = " --verbose --debug --hiera_config /vagrant/puppet/hiera.yaml"
-              puppet.module_path='puppet/modules'
-              puppet.manifests_path='puppet/manifests'
-              puppet.manifest_file=opts[:puppet]
-          end
+          # Configure additional shared folders
+          #
+          # config.vm.synced_folder "~/Documents", "/vagrant_data"
+
+          # Provisioners
+          # 
+          # Puppet 
+          #config.vm.provision :puppet do |puppet|
+          #    puppet.options = " --verbose --debug --hiera_config /vagrant/puppet/hiera.yaml"
+          #    puppet.module_path='puppet/modules'
+          #    puppet.manifests_path='puppet/manifests'
+          #    puppet.manifest_file=opts[:puppet]
+          #end
+          
+          # Ansible
+          #
+
+
+          # Salt
+          #
+
+
+          # Chef
+          #
+
+
+          # Shell Provisioning
+          # Every VM must have a bootstrap shell provisioner even if empty
+          #config.vm.provision "shell", path: opts[:bootstrap]
       end
   end
 end
