@@ -1,0 +1,29 @@
+
+[
+    {
+    "name": "centos-6.8-x64-gnome-puppet",
+    "description": "This box CentOS 6.8 x64 with Gnome and Puppet Installed",
+    "versions": [{
+        "version": "1.3.0",
+        "providers": [{
+                "name": "virtualbox",
+                "url": "file://~/Documents/tHC/vagrant/centos/6/centos-6.8-x64-gnome-puppet.box",
+                "checksum_type": "sha1",
+                "checksum": "43fab24a594aa9064790621559708e8849028a5c"
+        }]
+    }]
+    },
+    {
+    "name": "centos-6.8-x32-gnome-puppet",
+    "description": "This box CentOS 6.8 x64 with Gnome and Puppet Installed",
+    "versions": [{
+        "version": "1.3.0",
+        "providers": [{
+                "name": "virtualbox",
+                "url": "file://~/Documents/tHC/vagrant/centos/6/centos-6.8-x32-gnome-puppet.box",
+                "checksum_type": "sha1",
+                "checksum": "922a64577686e72ad5fec012cc4eb7029adc4672"
+        }]
+    }]
+    }
+]
