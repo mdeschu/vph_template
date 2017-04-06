@@ -16,17 +16,23 @@
 #
 # Define any machine you wish to be provisioned here
 #
+# For debugging either run vagrant up --debug
+# or VAGRANT_LOG=info|debug|warn|error
 nodes = [
     {
         :name => "generic-machine1",
-        # This box can either be one from hashicorp or 
-        # a custom box
-        :box => "centos-6.8-x64-gnome-puppet",
+        # # This box can either be one from hashicorp or a custom box
+        :box => "centos-6.9-x64-gnome-puppet",
+        # # Only one 'box' per json file :(
+        #:json_url => "file://~/Documents/tHC/vagrant/devops64.json",
+        #:version => "1.4.0",
         :eth1 => "10.0.0.255",
         :mem => "1024",
         :cpu => "1",
+        # Saves on disk space, Vagrant doesnt' currently remove the "master" VM
+        # # from which this is cloned. This must be done manually after destroying
+        # # all derived instances.
         :linked_clone => "true",
-        :puppet => "generic-machine1.pp",
         :showgui => true,
         # Ports to forward outside 
         :ports => [
@@ -35,10 +41,13 @@ nodes = [
                 :guest => "65001"
             }
         ],
-        #:bootstrap => "bootstrap.sh",
-        #:puppet => "manifest.pp",
+        # SSH port that vagrant will forward through localhost so that
+        # vagrant ssh will work and not conflict when running multiple
+        # machine setup
         :ssh =>"9999",
         :groups => "/vagrant/nested_group,/group2",
+        #:puppet => "generic-machine1.pp",
+        #:bootstrap => "generic-machine1.sh",
     }
 ]
 
@@ -50,16 +59,20 @@ VAGRANTFILE_API_VERSION = "2"
 # The code below should not generally be touched
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
+  # # Insert path to your custom private key here
+  #config.ssh.private_key_path = "~/.ssh/id_rsa.vagrant"
+
   nodes.each do |opts|
 
       config.vm.define opts[:name] do |config|
 
-          # Default to not check for updates. We don't have a personal server
-          config.vm.box_check_update = false
+          # # Use this to override using Vagrants Cloud if using personal versioned boxes
+          #config.vm.box_url = opts[:json_url] 
+          #config.vm.box_version = opts[:version]
+ 
+          # # Default to not check for updates if using custom boxes and don't have a personal server
+          #config.vm.box_check_update = false
 
-          # Use this to override using Vagrants Cloud
-          config.vm.box_url = "file://~/Documents/tHC/vagrant/devops.json"
-          
           # Vagrant box to use
           config.vm.box = opts[:box]
           # Hostname
@@ -134,7 +147,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
           # Configure additional shared folders
           #
-          # config.vm.synced_folder "~/Documents", "/vagrant_data"
+          # NFS
+          # RSYNC
+          # SMB
+          # config.vm.synced_folder "~/Documents", "/vagrant_data" #, type: "nfs"
 
           #
           #
