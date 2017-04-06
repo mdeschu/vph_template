@@ -1,0 +1,13 @@
+{
+    "name": "centos-6.9-x64-gnome-puppet",
+    "description": "This box CentOS 6.9 x64 with Gnome and Puppet Installed",
+    "versions": [{
+        "version": "1.4.0",
+        "providers": [{
+                "name": "virtualbox",
+                "url": "file:///Users/mdeschu/Documents/tHC/vagrant/centos/6/centos-6.9-x64-gnome-puppet_1.4.0.box",
+                "checksum_type": "sha1",
+                "checksum": "f095d0a44470249f5e2a4b3b2c36050e4136115e"
+        }]
+    }]
+}
